@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calcolatore di Rendita Netta</title>
+  <style>
+    :root { --bg:#f7f7fb; --card:#fff; --text:#222; --muted:#666; --border:#e6e6ef; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--text); }
+    .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+    h1 { font-size: 24px; margin: 0 0 4px; }
+    h2 { font-size: 18px; margin: 0 0 12px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+    .grid { display:grid; gap:16px; }
+    @media (min-width: 768px){ .grid-3 { grid-template-columns: 1fr 1fr 1fr; } .grid-2 { grid-template-columns: 1fr 1fr; } }
+    label { font-size: 12px; color: var(--muted); display:block; margin-bottom:6px; }
+    input { width: 100%; padding:10px 12px; border:1px solid var(--border); border-radius:12px; font-size:14px; }
+    .row { display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+    .muted { color:var(--muted); font-size:12px; }
+    .result { font-size: 28px; font-weight: 700; }
+    .small { font-size:12px; }
+    .list { padding-left: 18px; }
+    .list li { margin: 6px 0; }
+    footer { color:var(--muted); font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="grid" style="gap:6px">
+      <h1>Calcolatore di Rendita Netta</h1>
+      <div class="muted">Inserisci patrimonio e orizzonte: stimeremo la rendita <strong>annua netta</strong> e quella mensile.</div>
+    </header>
+
+    <div class="grid grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="muted small">Rendita annua stimata (netta)</div>
+        <div id="renditaAnnuaNetta" class="result">€ 0</div>
+        <div id="renditaMensileNetta" class="muted small" style="margin-top:8px;">≈ € 0 al mese</div>
+      </div>
+      <div class="card grid" style="grid-auto-rows:min-content; gap:8px;" id="bloccosx">
+        <div class="row"><span>Capitale stimato a fine accumulo (nominale)</span><strong id="fvNom">€ 0</strong></div>
+        <div class="row"><span>Potere d'acquisto di oggi (capitale reale)</span><strong id="fvReale">€ 0</strong></div>
+        <div class="row small muted"><span>Rendimento netto annuo effettivo</span><span id="rNet">0%</span></div>
+      </div>
+      <div class="card grid" style="grid-auto-rows:min-content; gap:8px;">
+        <div class="row small muted"><span>Tasso di prelievo</span><span id="wShow">4,00%</span></div>
+        <div class="row small muted"><span>Inflazione attesa</span><span id="infShow">2,00%</span></div>
+        <div class="row small muted"><span>Aliquota stimata</span><span id="taxShow">26,00%</span></div>
+      </div>
+    </div>
+
+    <section class="card" style="margin-top:16px;">
+      <h2>Dati principali</h2>
+      <div class="grid grid-3">
+        <div>
+          <label>Patrimonio/Investimenti attuali (€)</label>
+          <input type="number" id="patrimonio" value="100000" min="0" />
+        </div>
+        <div>
+          <label>Tra quanti anni vuoi la rendita</label>
+          <input type="number" id="anni" value="20" min="0" />
+        </div>
+        <div>
+          <label>Tasso di prelievo iniziale (%)</label>
+          <input type="number" id="tassoPrelievo" value="4" step="0.1" min="0" />
+          <div class="muted small">Default 4% (regola prudente a lungo termine)</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h2>Opzioni avanzate</h2>
+      <div class="grid grid-3">
+        <div>
+          <label>Rendimento medio annuo lordo (%)</label>
+          <input type="number" id="rendimentoLordo" value="6" step="0.1" />
+        </div>
+        <div>
+          <label>Aliquota su rendimenti (%)</label>
+          <input type="number" id="aliquota" value="26" step="0.1" />
+          <div class="muted small">Esempio: 26% (12,5% per titoli di Stato)</div>
+        </div>
+        <div>
+          <label>Contributo annuo (€)</label>
+          <input type="number" id="contributoAnnuo" value="0" min="0" />
+          <div class="muted small">Facoltativo: risparmio aggiunto ogni anno</div>
+        </div>
+        <div>
+          <label>Inflazione attesa (%)</label>
+          <input type="number" id="inflazione" value="2" step="0.1" />
+          <div class="muted small">Usata per stimare il capitale in termini reali</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:16px;">
+      <h2>Come leggere il risultato</h2>
+      <ul class="list">
+        <li><strong>Rendita netta</strong>: stima dell'importo prelevabile ogni anno al netto delle imposte, assumendo un tasso di prelievo sul capitale.</li>
+        <li>Il modello applica un <strong>drag fiscale annuale</strong> sui rendimenti e la stessa aliquota ai prelievi. Nella realtà, la tassazione dipende dagli strumenti e dai realizzi.</li>
+        <li>Prova a variare <strong>rendimento, aliquota, inflazione e contributi</strong> per analisi di scenario.</li>
+      </ul>
+      <footer style="margin-top:8px;">Strumento didattico: non costituisce consulenza finanziaria o fiscale.</footer>
+    </section>
+  </div>
+
+  <script>
+    function eur(v){
+      try{
+        return new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(isFinite(v)?v:0);
+      }catch(e){ return '€ ' + (isFinite(v)?Math.round(v):0).toLocaleString('it-IT'); }
+    }
+    function pct(v){ return (v*100).toFixed(2) + '%'; }
+    function num(id){ const el=document.getElementById(id); const val=parseFloat(String(el.value).replace(',','.')); return isFinite(val)?val:0; }
+    function clamp(v,min,max){ return Math.min(max, Math.max(min, v)); }
+
+    function calc(){
+      const P0 = num('patrimonio');
+      const n = Math.max(0, Math.floor(num('anni')));
+      const rGross = num('rendimentoLordo')/100;
+      const tax = clamp(num('aliquota'),0,100)/100;
+      const c = num('contributoAnnuo');
+      const inf = Math.max(0, num('inflazione'))/100;
+      const w = Math.max(0, num('tassoPrelievo'))/100;
+
+      const rNet = rGross * (1 - tax);
+      const fvBase = P0 * Math.pow(1 + rNet, n);
+      const fvContrib = c>0 && rNet!==0 ? c * ((Math.pow(1 + rNet, n) - 1) / rNet) : c*n;
+      const FV_nominale = fvBase + fvContrib;
+      const FV_reale = FV_nominale / Math.pow(1 + inf, n);
+
+      const renditaAnnuaLorda = FV_nominale * w;
+      const renditaAnnuaNetta = renditaAnnuaLorda * (1 - tax);
+      const renditaMensileNetta = renditaAnnuaNetta / 12;
+
+      // Update UI
+      document.getElementById('renditaAnnuaNetta').textContent = eur(renditaAnnuaNetta);
+      document.getElementById('renditaMensileNetta').textContent = '≈ ' + eur(renditaMensileNetta) + ' al mese';
+      document.getElementById('fvNom').textContent = eur(FV_nominale);
+      document.getElementById('fvReale').textContent = eur(FV_reale);
+      document.getElementById('rNet').textContent = pct(rNet);
+      document.getElementById('wShow').textContent = (w*100).toFixed(2) + '%';
+      document.getElementById('infShow').textContent = (inf*100).toFixed(2) + '%';
+      document.getElementById('taxShow').textContent = (tax*100).toFixed(2) + '%';
+    }
+
+    // Bind inputs
+    ['patrimonio','anni','tassoPrelievo','rendimentoLordo','aliquota','contributoAnnuo','inflazione'].forEach(id=>{
+      document.getElementById(id).addEventListener('input', calc);
+      document.getElementById(id).addEventListener('change', calc);
+    });
+
+    // Initial calc
+    calc();
+  </script>
+</body>
+</html>
